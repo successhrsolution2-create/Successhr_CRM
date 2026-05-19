@@ -1,9 +1,12 @@
 import axios from 'axios'
 
 const TOKEN_KEY = 'crm_access_token'
+const trimTrailingSlash = (value = '') => value.replace(/\/+$/, '')
+const API_ROOT = trimTrailingSlash(import.meta.env.VITE_API_URL || import.meta.env.VITE_CRM_API_URL || '')
+const CRM_API_BASE = API_ROOT ? `${API_ROOT}/crm` : '/crm'
 
 const api = axios.create({
-  baseURL: '/crm',
+  baseURL: CRM_API_BASE,
   withCredentials: true,
   headers: {
     'Content-Type': 'application/json'
@@ -31,7 +34,7 @@ api.interceptors.response.use(
 
     try {
       originalRequest._crmRetry = true
-      const refreshResponse = await axios.post('/crm/auth/refresh', null, { withCredentials: true })
+      const refreshResponse = await axios.post(`${CRM_API_BASE}/auth/refresh`, null, { withCredentials: true })
       const accessToken = refreshResponse.data?.accessToken
 
       if (accessToken) {
