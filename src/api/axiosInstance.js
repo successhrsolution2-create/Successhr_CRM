@@ -2,7 +2,8 @@ import axios from 'axios'
 
 const TOKEN_KEY = 'crm_access_token'
 const trimTrailingSlash = (value = '') => value.replace(/\/+$/, '')
-const API_ROOT = trimTrailingSlash(import.meta.env.VITE_API_URL || import.meta.env.VITE_CRM_API_URL || '')
+const DEFAULT_API_ROOT = import.meta.env.PROD ? 'https://api.successhrsolutions.com' : ''
+const API_ROOT = trimTrailingSlash(import.meta.env.VITE_API_URL || import.meta.env.VITE_CRM_API_URL || DEFAULT_API_ROOT)
 const CRM_API_BASE = API_ROOT ? `${API_ROOT}/crm` : '/crm'
 
 const api = axios.create({
