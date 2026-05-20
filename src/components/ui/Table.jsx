@@ -1,3 +1,5 @@
+import { formatDisplayText } from '../../utils/helpers.js'
+
 const Table = ({ columns = [], rows = [], emptyMessage = 'No records found', onRowClick }) => (
   <div className="overflow-hidden rounded-md border border-line bg-white shadow-[inset_5px_0_0_#0B5BA7]">
     <div className="overflow-x-auto">
@@ -7,7 +9,9 @@ const Table = ({ columns = [], rows = [], emptyMessage = 'No records found', onR
             {columns.map((column, index) => (
               <th
                 key={column.key}
-                className={`whitespace-nowrap px-4 font-medium ${index < columns.length - 1 ? 'border-r border-line' : ''}`}
+                className={`whitespace-nowrap px-4 font-medium ${column.headerClassName || ''} ${
+                  index < columns.length - 1 ? 'border-r border-line' : ''
+                }`}
               >
                 {column.label}
               </th>
@@ -22,7 +26,7 @@ const Table = ({ columns = [], rows = [], emptyMessage = 'No records found', onR
               </td>
             </tr>
           ) : (
-            rows.map((row) => (
+            rows.map((row, rowIndex) => (
               <tr
                 key={row._id || row.id}
                 className={`h-11 border-b border-line last:border-b-0 ${onRowClick ? 'cursor-pointer transition hover:bg-slate-50' : ''}`}
@@ -31,9 +35,11 @@ const Table = ({ columns = [], rows = [], emptyMessage = 'No records found', onR
                 {columns.map((column, index) => (
                   <td
                     key={column.key}
-                    className={`whitespace-nowrap px-4 py-3 align-middle text-slate-700 ${index < columns.length - 1 ? 'border-r border-line' : ''}`}
+                    className={`whitespace-nowrap px-4 py-3 align-middle text-slate-700 ${column.cellClassName || ''} ${
+                      index < columns.length - 1 ? 'border-r border-line' : ''
+                    }`}
                   >
-                    {column.render ? column.render(row) : row[column.key]}
+                    {column.render ? column.render(row, rowIndex) : formatDisplayText(row[column.key])}
                   </td>
                 ))}
               </tr>

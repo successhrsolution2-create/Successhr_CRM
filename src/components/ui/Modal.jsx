@@ -21,9 +21,16 @@ const Modal = ({ open, title, children, onClose, size = 'md' }) => {
       <div className={`max-h-[90vh] w-full ${sizeClass} overflow-y-auto rounded-lg bg-white shadow-soft`}>
         <div className="flex items-center justify-between border-b border-line px-5 py-4">
           <h2 className="text-base font-semibold text-ink">{title}</h2>
-          <button className="crm-button-secondary h-8 px-3" type="button" onClick={onClose} aria-label="Close modal">
-            x
-          </button>
+          {onClose ? (
+            <button
+              className="inline-flex h-8 w-8 items-center justify-center rounded-md border border-line bg-white text-sm font-bold text-slate-500 transition hover:border-brand-blue hover:bg-brand-blue-soft hover:text-brand-blue-dark"
+              type="button"
+              onClick={onClose}
+              aria-label="Close modal"
+            >
+              X
+            </button>
+          ) : null}
         </div>
         <div className="px-5 py-5">{children}</div>
       </div>

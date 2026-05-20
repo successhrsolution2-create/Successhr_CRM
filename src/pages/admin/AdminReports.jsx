@@ -135,9 +135,9 @@ const AdminReports = ({ initialView = 'reports' }) => {
       render: (row) => <Badge tone={callStatusTone[row.callStatus]}>{row.callStatus}</Badge>
     },
     {
-      key: 'latestCall',
-      label: 'Last Called',
-      render: (row) => formatDateTime(row.latestCall?.calledAt)
+      key: 'lastUpdatedAt',
+      label: 'Last Update',
+      render: (row) => formatDateTime(row.updatedAt)
     }
   ]
 

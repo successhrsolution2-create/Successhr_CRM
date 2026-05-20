@@ -5,9 +5,7 @@ import toast from 'react-hot-toast'
 import { useNavigate, useParams } from 'react-router-dom'
 import * as yup from 'yup'
 import api from '../../api/axiosInstance.js'
-import Badge from '../../components/ui/Badge.jsx'
-import Table from '../../components/ui/Table.jsx'
-import { callStatusTone, formatDateTime, getErrorMessage } from '../../utils/helpers.js'
+import { formatDisplayText, getErrorMessage } from '../../utils/helpers.js'
 
 const defaultValues = {
   candidateName: '',
@@ -57,12 +55,6 @@ const candidateSchema = yup.object({
     .required('Call status is required')
 })
 
-const callLogSchema = yup.object({
-  remark: yup.string().max(2000, 'Remark cannot exceed 2000 characters'),
-  status: yup.string().oneOf(['answered', 'not_answered', 'busy', 'callback']).required('Call log status is required'),
-  nextFollowup: yup.string()
-})
-
 const FieldError = ({ message }) => (message ? <span className="mt-1 block text-xs text-rose-600">{message}</span> : null)
 
 const CandidateForm = ({ mode = 'create' }) => {
@@ -70,7 +62,6 @@ const CandidateForm = ({ mode = 'create' }) => {
   const navigate = useNavigate()
   const isEdit = mode === 'edit'
   const [loading, setLoading] = useState(isEdit)
-  const [callLogs, setCallLogs] = useState([])
 
   const {
     register,
@@ -83,28 +74,7 @@ const CandidateForm = ({ mode = 'create' }) => {
     defaultValues
   })
 
-  const {
-    register: registerLog,
-    reset: resetLog,
-    handleSubmit: handleSubmitLog,
-    formState: { errors: logErrors, isSubmitting: isSubmittingLog }
-  } = useForm({
-    resolver: yupResolver(callLogSchema),
-    defaultValues: {
-      remark: '',
-      status: 'answered',
-      nextFollowup: ''
-    }
-  })
-
   const interestedStatus = useWatch({ control, name: 'interested.status' })
-
-  const loadCallLogs = async () => {
-    if (!id) return
-
-    const response = await api.get(`/candidates/${id}/logs?limit=50`)
-    setCallLogs(response.data.data?.callLogs || [])
-  }
 
   const loadCandidate = async () => {
     if (!isEdit || !id) return
@@ -116,25 +86,24 @@ const CandidateForm = ({ mode = 'create' }) => {
 
       if (candidate) {
         reset({
-          candidateName: candidate.candidateName || '',
+          candidateName: formatDisplayText(candidate.candidateName),
           mobileNumber: candidate.mobileNumber || '',
-          education: candidate.education || '',
-          jobNo: candidate.jobNo || '',
-          jobProfile: candidate.jobProfile || '',
+          education: formatDisplayText(candidate.education),
+          jobNo: formatDisplayText(candidate.jobNo),
+          jobProfile: formatDisplayText(candidate.jobProfile),
           interested: {
             status: candidate.interested?.status || 'yes',
-            reason: candidate.interested?.reason || ''
+            reason: formatDisplayText(candidate.interested?.reason)
           },
-          availabilityForInterview: candidate.availabilityForInterview || '',
-          interviewTime: candidate.interviewTime || '',
-          overallCallingRemark: candidate.overallCallingRemark || '',
+          availabilityForInterview: formatDisplayText(candidate.availabilityForInterview),
+          interviewTime: formatDisplayText(candidate.interviewTime),
+          overallCallingRemark: formatDisplayText(candidate.overallCallingRemark),
           candidateClass: candidate.candidateClass || '1st',
           registrationInfo: candidate.registrationInfo || 'RC',
           callStatus: candidate.callStatus || 'pending'
         })
       }
 
-      await loadCallLogs()
     } catch (error) {
       toast.error(getErrorMessage(error, 'Failed to load candidate'))
       navigate('/employee/candidates', { replace: true })
@@ -169,38 +138,6 @@ const CandidateForm = ({ mode = 'create' }) => {
       toast.error(getErrorMessage(error, 'Failed to save candidate'))
     }
   }
-
-  const onSubmitLog = async (values) => {
-    try {
-      const payload = {
-        remark: values.remark,
-        status: values.status,
-        ...(values.nextFollowup ? { nextFollowup: values.nextFollowup } : {})
-      }
-
-      await api.post(`/candidates/${id}/logs`, payload)
-      toast.success('Call log added')
-      resetLog({ remark: '', status: 'answered', nextFollowup: '' })
-      await Promise.all([loadCallLogs(), loadCandidate()])
-    } catch (error) {
-      toast.error(getErrorMessage(error, 'Failed to add call log'))
-    }
-  }
-
-  const callLogColumns = [
-    {
-      key: 'calledAt',
-      label: 'Called At',
-      render: (row) => formatDateTime(row.calledAt)
-    },
-    {
-      key: 'status',
-      label: 'Status',
-      render: (row) => <Badge tone={row.status === 'answered' ? 'emerald' : row.status === 'callback' ? 'amber' : 'slate'}>{row.status}</Badge>
-    },
-    { key: 'remark', label: 'Remark', render: (row) => row.remark || '-' },
-    { key: 'nextFollowup', label: 'Next Follow-up', render: (row) => formatDateTime(row.nextFollowup) }
-  ]
 
   if (loading) {
     return <div className="rounded-md border border-line bg-white p-6 text-slate-600">Loading candidate...</div>
@@ -333,45 +270,6 @@ const CandidateForm = ({ mode = 'create' }) => {
           </button>
         </div>
       </form>
-
-      {isEdit && (
-        <section className="space-y-4 rounded-md border border-line bg-white p-5 shadow-[inset_5px_0_0_#0B5BA7]">
-          <div className="flex flex-col gap-1">
-            <h2 className="text-lg font-bold text-brand-blue-dark">Call Logs</h2>
-            <p className="text-sm text-slate-600">History for this candidate.</p>
-          </div>
-
-          <form className="grid gap-3 lg:grid-cols-[1fr_180px_220px_auto]" onSubmit={handleSubmitLog(onSubmitLog)}>
-            <label className="block">
-              <span className="crm-label">Remark</span>
-              <input className="crm-input mt-1" {...registerLog('remark')} />
-              <FieldError message={logErrors.remark?.message} />
-            </label>
-            <label className="block">
-              <span className="crm-label">Status</span>
-              <select className="crm-input mt-1" {...registerLog('status')}>
-                <option value="answered">Answered</option>
-                <option value="not_answered">Not Answered</option>
-                <option value="busy">Busy</option>
-                <option value="callback">Callback</option>
-              </select>
-              <FieldError message={logErrors.status?.message} />
-            </label>
-            <label className="block">
-              <span className="crm-label">Next Follow-up</span>
-              <input className="crm-input mt-1" type="datetime-local" {...registerLog('nextFollowup')} />
-              <FieldError message={logErrors.nextFollowup?.message} />
-            </label>
-            <div className="flex items-end">
-              <button className="crm-button-primary w-full" type="submit" disabled={isSubmittingLog}>
-                {isSubmittingLog ? 'Adding...' : 'Add Log'}
-              </button>
-            </div>
-          </form>
-
-          <Table columns={callLogColumns} rows={callLogs} emptyMessage="No call logs found" />
-        </section>
-      )}
     </div>
   )
 }

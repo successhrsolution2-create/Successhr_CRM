@@ -35,6 +35,33 @@ export const getPersistedUser = () => {
 export const getErrorMessage = (error, fallback = 'Request failed') =>
   error?.response?.data?.message || error?.message || fallback
 
+const HTML_ENTITY_LOOKUP = {
+  '&amp;': '&',
+  '&lt;': '<',
+  '&gt;': '>',
+  '&quot;': '"',
+  '&#34;': '"',
+  '&#x22;': '"',
+  '&#39;': "'",
+  '&#x27;': "'",
+  '&#x2F;': '/',
+  '&#47;': '/'
+}
+
+export const decodeHtmlEntities = (value) => {
+  if (typeof value !== 'string') return value
+
+  return value.replace(/&(amp|lt|gt|quot);|&#(?:34|39|47);|&#x(?:22|27|2F);/gi, (entity) => {
+    const normalized = entity.toLowerCase()
+    return HTML_ENTITY_LOOKUP[normalized] || entity
+  })
+}
+
+export const formatDisplayText = (value, fallback = '') => {
+  if (value === null || value === undefined || value === '') return fallback
+  return typeof value === 'string' ? decodeHtmlEntities(value) : value
+}
+
 export const formatDateTime = (value, fallback = '-') => {
   if (!value) return fallback
 
